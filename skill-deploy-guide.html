@@ -1,0 +1,1063 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agent 스킬 배포 가이드</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3B82F6;
+      --primary-light: #EFF6FF;
+      --primary-dark: #1D4ED8;
+      --accent: #8B5CF6;
+      --accent-light: #F5F3FF;
+      --bg: #FAFBFC;
+      --surface: #FFFFFF;
+      --text-primary: #1E293B;
+      --text-secondary: #64748B;
+      --text-tertiary: #94A3B8;
+      --border: #E2E8F0;
+      --border-light: #F1F5F9;
+      --success: #10B981;
+      --success-light: #ECFDF5;
+      --code-bg: #1E293B;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.07);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.10);
+      --radius: 14px;
+      --radius-lg: 20px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ── Navigation ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .nav-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+    }
+    .back-btn {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-btn:hover { background: var(--border-light); color: var(--text-primary); }
+    .back-btn.visible { display: flex; }
+
+    /* ── Container ── */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── View System ── */
+    .view {
+      display: none;
+      padding: 100px 0 60px;
+      animation: viewIn 0.35s ease;
+    }
+    .view.active { display: block; }
+    @keyframes viewIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Home View ── */
+    .home-hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .home-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 16px;
+      margin-bottom: 20px;
+    }
+    .home-hero h1 {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.35;
+      margin-bottom: 12px;
+      letter-spacing: -0.4px;
+    }
+    .home-hero h1 .gradient {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .home-hero p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    .install-notice {
+      text-align: center;
+      padding: 24px 24px;
+      background: var(--surface);
+      border: 1px solid #FED7AA;
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      box-shadow: 0 0 0 1px rgba(249,115,22,0.06), 0 4px 20px rgba(249,115,22,0.12);
+    }
+    .install-notice .lead {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+    .install-notice p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .install-notice a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .install-notice a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+    .install-notice a svg {
+      flex-shrink: 0;
+    }
+
+    /* ── Choice Cards ── */
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .choice-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.25s, border-color 0.2s;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .choice-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .choice-card.blue::before { background: var(--primary); }
+    .choice-card.purple::before { background: var(--accent); }
+    .choice-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: transparent;
+    }
+    .choice-card:hover::before { opacity: 1; }
+    .choice-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+    }
+    .choice-icon.blue { background: var(--primary-light); }
+    .choice-icon.purple { background: var(--accent-light); }
+    .choice-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .choice-card .subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+    .choice-card .arrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 18px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: gap 0.2s;
+    }
+    .choice-card.blue .arrow { color: var(--primary); }
+    .choice-card.purple .arrow { color: var(--accent); }
+    .choice-card:hover .arrow { gap: 8px; }
+
+    /* 추천 카드 강조 */
+    .choice-card.recommended {
+      border-color: rgba(59, 130, 246, 0.45);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.08), 0 4px 20px rgba(59, 130, 246, 0.10);
+    }
+    .choice-card.recommended::after {
+      content: '추천';
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      line-height: 1;
+    }
+    .choice-card.recommended:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.12), 0 12px 36px rgba(59, 130, 246, 0.18);
+      border-color: rgba(59, 130, 246, 0.6);
+    }
+
+    /* ── Sub View Header ── */
+    .sub-header {
+      margin-bottom: 36px;
+    }
+    .sub-header .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .sub-header .label.blue { color: var(--primary); }
+    .sub-header .label.purple { color: var(--accent); }
+    .sub-header h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    .sub-header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── Step Cards ── */
+    .step-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .step-card-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-card-num.blue { background: var(--primary); }
+    .step-card-num.purple { background: var(--accent); }
+    .step-card-body h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .step-card-body p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .step-card-body .placeholder-tag {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: var(--border-light);
+      color: var(--text-tertiary);
+    }
+
+    /* ── Guide Sections ── */
+    .guide-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .guide-section-header {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .guide-section-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--primary);
+      flex-shrink: 0;
+    }
+    .guide-section-title h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.2px;
+    }
+    .guide-section-title p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .guide-img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .guide-img-grid.two-col { grid-template-columns: repeat(2, 1fr); }
+    .guide-img-grid.three-col { grid-template-columns: repeat(3, 1fr); }
+    .guide-img {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .guide-img:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+    .guide-img img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .guide-img-caption {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      background: var(--surface);
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+    .guide-tip {
+      margin-top: 16px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      background: var(--surface);
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      border-radius: 8px;
+    }
+    .download-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      border: 1.5px dashed var(--primary);
+      border-radius: 12px;
+      background: var(--primary-light);
+    }
+    a.download-card {
+      text-decoration: none;
+      color: inherit;
+    }
+    .download-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .download-card-body h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .download-card-body p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+    .download-card-body .file-hint {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    @media (max-width: 640px) {
+      .guide-img-grid.two-col,
+      .guide-img-grid.three-col { grid-template-columns: 1fr; }
+      .guide-section { padding: 20px; }
+      .download-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+
+    /* ── Prompt View ── */
+    .prompt-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .prompt-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--border-light);
+      border-bottom: 1px solid var(--border);
+    }
+    .prompt-toolbar .label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
+    .copy-btn:hover { background: var(--primary-dark); }
+    .copy-btn:active { transform: scale(0.97); }
+    .copy-btn.copied {
+      background: var(--success);
+    }
+    .prompt-content {
+      padding: 24px;
+      min-height: 200px;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      font-family: 'Pretendard Variable', sans-serif;
+    }
+    .prompt-content .placeholder-block {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      color: var(--text-tertiary);
+      font-size: 14px;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      margin: 4px 0;
+    }
+
+    /* ── Prompt Guide ── */
+    .prompt-guide {
+      margin-bottom: 20px;
+    }
+    .prompt-guide h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.2px;
+    }
+    .prompt-guide > p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .prompt-guide .guide-img {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ── Lightbox ── */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(9, 15, 27, 0.88);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+    .lightbox.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .lightbox-close:hover { background: rgba(255, 255, 255, 0.22); }
+    .lightbox-close:active { transform: scale(0.94); }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .lightbox-nav:hover { background: rgba(255, 255, 255, 0.22); }
+    .lightbox-nav:active { transform: translateY(-50%) scale(0.94); }
+    .lightbox-nav.prev { left: 20px; }
+    .lightbox-nav.next { right: 20px; }
+    .lightbox-content {
+      max-width: calc(100vw - 160px);
+      max-height: calc(100vh - 140px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: lightboxZoom 0.25s ease;
+    }
+    @keyframes lightboxZoom {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .lightbox-content img {
+      max-width: 100%;
+      max-height: calc(100vh - 200px);
+      border-radius: 12px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      background: var(--surface);
+    }
+    .lightbox-caption {
+      margin-top: 16px;
+      padding: 0 20px;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.92);
+      line-height: 1.6;
+      text-align: center;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      max-width: 760px;
+    }
+    .lightbox-counter {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+    @media (max-width: 640px) {
+      .lightbox-content {
+        max-width: calc(100vw - 48px);
+        max-height: calc(100vh - 120px);
+      }
+      .lightbox-content img { max-height: calc(100vh - 180px); }
+      .lightbox-nav {
+        width: 40px;
+        height: 40px;
+      }
+      .lightbox-nav.prev { left: 10px; }
+      .lightbox-nav.next { right: 10px; }
+      .lightbox-close { top: 12px; right: 12px; }
+    }
+
+    .callout {
+      display: flex;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-top: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .callout.tip { background: var(--success-light); color: #065F46; }
+    .callout-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 540px) {
+      .choice-grid { grid-template-columns: 1fr; }
+      .home-hero h1 { font-size: 24px; }
+      .step-card { padding: 18px 20px; gap: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-brand" onclick="showView('home');return false;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Skill 가이드
+    </a>
+    <button class="back-btn" id="backBtn" onclick="showView('home')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      처음으로
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- HOME VIEW -->
+<!-- ═══════════════════════════════════════ -->
+<div class="view active" id="view-home">
+  <div class="container">
+    <div class="home-hero">
+      <div class="home-badge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        AI Agent Skill
+      </div>
+      <h1>악시오 워크를 활용한<br><span class="gradient">원클릭 공장 탐색</span></h1>
+      <p>5분 안에 알리바바닷컴의 믿을 수 있는 공장 목록 보고서를 만들어드려요.</p>
+    </div>
+
+    <div class="install-notice">
+      <p class="lead">가장 먼저 Accio Work를 설치하고 실행해야 해요.</p>
+      <a href="https://www.accio.com/work?accio_page_id=g0dtirlspsecas2q19f3b8c10b121eb3a063131739&spm=a2700.accio_index" target="_blank" rel="noopener noreferrer">
+        Accio Work 다운로드 받기
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+    </div>
+
+    <div class="choice-grid">
+      <!-- Choice 1: Skill Registration -->
+      <div class="choice-card blue recommended" onclick="showView('register')">
+        <div class="choice-icon blue">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <h3>스킬 등록하기</h3>
+        <p class="subtitle">스킬 등록하고 프롬프트 입력 없이<br>공장 보고서 받기</p>
+        <div class="arrow">
+          시작하기
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Choice 2: Get Prompt -->
+      <div class="choice-card purple" onclick="showView('prompt')">
+        <div class="choice-icon purple">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <h3>프롬프트 받기</h3>
+        <p class="subtitle">스킬 등록이 어렵다면,<br>바로 쓸 수 있는 프롬프트 받기</p>
+        <div class="arrow">
+          받기
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- REGISTER VIEW (스킬 등록하기) -->
+<!-- ═══════════════════════════════════════ -->
+<div class="view" id="view-register">
+  <div class="container">
+    <div class="sub-header">
+      <div class="label blue">
+        SKILL REGISTRATION
+      </div>
+      <h2>스킬 등록하기</h2>
+      <p>아래 단계에 따라 스킬을 등록하면, 이후 프롬프트 작성 없이 공장 보고서를 생성합니다.</p>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-num">1</div>
+        <div class="guide-section-title">
+          <h3>스킬 파일 다운로드</h3>
+          <p>아래 파일을 다운로드 받고, 파일을 저장하신 폴더 위치를 확인하세요.</p>
+        </div>
+      </div>
+      <a href="factory-sourcer.zip" download class="download-card">
+        <div class="download-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div class="download-card-body">
+          <h4>공장 조사 보고서 스킬.zip</h4>
+        </div>
+      </a>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-num">2</div>
+        <div class="guide-section-title">
+          <h3>스킬 등록</h3>
+          <p>다운로드한 스킬 파일을 Accio에 등록합니다.</p>
+        </div>
+      </div>
+      <div class="guide-img-grid two-col">
+        <div class="guide-img">
+          <img src="skill-guide-images/image1.png" alt="플러그인 메뉴 클릭">
+          <div class="guide-img-caption">왼쪽 탭에서 <strong>플러그인</strong>을 클릭하세요.</div>
+        </div>
+        <div class="guide-img">
+          <img src="skill-guide-images/image2.png" alt="스킬 탭 클릭">
+          <div class="guide-img-caption">상단 탭에서 <strong>스킬</strong>을 클릭하세요.</div>
+        </div>
+        <div class="guide-img">
+          <img src="skill-guide-images/image3.png" alt="업로드 및 아카이브 선택">
+          <div class="guide-img-caption">우상단 <strong>업로드</strong> 버튼을 누르고 <strong>아카이브 선택</strong>을 클릭하세요.</div>
+        </div>
+        <div class="guide-img">
+          <img src="skill-guide-images/image4.png" alt="압축 파일 선택 후 열기">
+          <div class="guide-img-caption">다운로드 받은 압축 파일을 선택하고 <strong>열기</strong>를 누르세요.</div>
+        </div>
+        <div class="guide-img">
+          <img src="skill-guide-images/image5.png" alt="공장 조사 보고서 스킬 켜기">
+          <div class="guide-img-caption">스킬 목록 가장 하단에 ‘<strong>공장 조사 보고서</strong>’가 생성되면 켜기(초록색)를 활성화하세요.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-num">3</div>
+        <div class="guide-section-title">
+          <h3>스킬 사용</h3>
+          <p>왼쪽 탭 플러그인 - Accio 소싱 툴킷의 대화 아이콘을 클릭하면 소싱 전문 에이전트와 대화가 시작됩니다.</p>
+        </div>
+      </div>
+      <div class="guide-img-grid three-col">
+        <div class="guide-img">
+          <img src="skill-guide-images/image6.png" alt="Accio 소싱 툴킷 대화 아이콘 클릭">
+          <div class="guide-img-caption"><strong>Accio 소싱 툴킷</strong>의 대화 아이콘을 클릭하세요.</div>
+        </div>
+        <div class="guide-img">
+          <img src="skill-guide-images/image7.png" alt="공급원 찾기 및 공장 조사 보고서 선택">
+          <div class=”guide-img-caption”>”/”를 입력한 뒤, <strong>공장 조사 보고서</strong>를 선택하세요.</div>
+        </div>
+        <div class="guide-img">
+          <img src="skill-guide-images/image8.png" alt="소싱 요구사항 입력">
+          <div class=”guide-img-caption”>스킬과 함께 <strong>”소싱”</strong>을 보내신 후, 가이드에 따라 요구 사항을 입력하고 보고서를 받아보세요.</div>
+        </div>
+      </div>
+      <p class=”guide-tip”>사용 방법이 익숙해지셨다면, 스킬 선택 후 “소싱” 없이 바로 요구사항을 보내셔도 됩니다. 가이드가 필요하시거나, 새로운 품목으로 재검색을 하실 때 “소싱”을 보내주세요.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PROMPT VIEW (프롬프트 받기) -->
+<!-- ═══════════════════════════════════════ -->
+<div class="view" id="view-prompt">
+  <div class="container">
+    <div class="sub-header">
+      <div class="label purple">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        READY-TO-USE PROMPT
+      </div>
+      <h2>프롬프트 받기</h2>
+      <p>①아래 프롬프트를 복사하고, ②Accio 소싱 툴킷 대화창에 붙여넣고, ③[소싱 요구사항]의 내용을 채워, 바로 전송하세요!</p>
+    </div>
+
+    <div class="guide-section prompt-guide">
+      <h3>복사하신 프롬프트는 여기로 보내주세요👀</h3>
+      <p>왼쪽 탭 플러그인 → Accio 소싱 툴킷의 대화 아이콘을 클릭하면 소싱 전문 에이전트와 대화가 시작됩니다.</p>
+      <div class="guide-img">
+        <img src="accio-sourcing-toolkit-guide.png" alt="왼쪽 탭 플러그인 - Accio 소싱 툴킷 대화 아이콘">
+      </div>
+    </div>
+
+    <div class="prompt-wrapper">
+      <div class="prompt-toolbar">
+        <div class="label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Prompt
+        </div>
+        <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <span id="copyLabel">전체 복사</span>
+        </button>
+      </div>
+      <div class="prompt-content" id="promptContent">이 제품을 생산/소싱할 수 있는 전문적인 제조 공장을 찾고 있어. 아래 소싱 요구사항과 보고서 작업 지시에 따라 공급업체 추천 보고서를 만들어줘.
+
+[소싱 요구사항]
+품목:
+필수 조건:
+희망 조건:
+
+[보고서 작업 조건]
+작업 효율화: 불필요한 서론/결론 줄글은 생략하고 핵심 데이터 중심으로 답변해. 크레딧 최대 사용량 50을 초과하지 않도록, 작업을 효율적으로 관리해줘.
+출력 형태: 본 채팅창에는 요약 및 표 형태로 출력하고, 전체 보고서는 워킹 디렉토리에 파일로 생성해줘.
+
+[보고서 포함 항목]
+1. 공급업체 추천 리스트
+추천 업체 10개, 단, 필수 조건 충족 업체가 10개 미만인 경우, 조건을 충족하는 업체만 추천해줘.
+아래 항목을 포함하여 리스트를 표 형태로 작성해줘;
+추천 순위 / 업체명 / 프로필 링크 / 소싱 품목(또는 유사 품목) 상품 페이지 링크 / 추천 이유 (핵심 강점 1줄 요약) / 업체 평점 및 재구매율 / Verified 여부 / 업력
+
+2. 제조공장 판별 근거
+추천 리스트의 모든 업체에 대하여, 유통상이 아닌 '실제 제조공장'으로 판단한 근거를 자세하게 제시해줘.(보유 설비 명칭, 핵심 인증서 명칭 등)
+확인 데이터: 직원 수, 공장 규모, 보유 설비, 보유 인증서, 주요 거래 이력
+주의: 플랫폼 인증(Verified) 마크 및 기업 유형(Business Type) 데이터를 우선 확인, 신뢰할 수 있는 정보만 취합.
+
+3. 전문성 검증용 핵심 질문 리스트
+이 품목의 제조 전문성 및 생산 역량을 확인하기 위해 공급업체에게 보낼 필수 질문 5가지를 [한국어 - 영어] 쌍으로 작성해줘.
+
+4. 요약 및 실행 제안
+결론을 한 눈에 볼 수 있게 요약하고, 바로 실행할 액션 3가지를 단답형 Bullet point로 제시해줘.</div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </span>
+      <span><strong>팁:</strong> 복사한 프롬프트를 Agent 대화창에 붙여넣으면 바로 사용할 수 있습니다.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightboxOnBackdrop(event)">
+  <button class="lightbox-close" id="lightboxClose" onclick="closeLightbox(event)" aria-label="닫기">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <button class="lightbox-nav prev" id="lightboxPrev" onclick="prevLightbox(event)" aria-label="이전">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="lightbox-nav next" id="lightboxNext" onclick="nextLightbox(event)" aria-label="다음">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <div class="lightbox-content" id="lightboxContent" onclick="event.stopPropagation()">
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<script>
+  // ── View Switching ──
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    
+    const backBtn = document.getElementById('backBtn');
+    if (name === 'home') {
+      backBtn.classList.remove('visible');
+    } else {
+      backBtn.classList.add('visible');
+    }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Copy Prompt ──
+  function copyPrompt() {
+    const content = document.getElementById('promptContent').innerText;
+    navigator.clipboard.writeText(content).then(() => {
+      const btn = document.getElementById('copyBtn');
+      const label = document.getElementById('copyLabel');
+      btn.classList.add('copied');
+      label.textContent = '복사 완료!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        label.textContent = '전체 복사';
+      }, 1500);
+    });
+  }
+
+  // ── Lightbox ──
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxCaption = document.getElementById('lightboxCaption');
+  const lightboxCounter = document.getElementById('lightboxCounter');
+  let galleryItems = [];
+  let currentIndex = 0;
+
+  function buildGallery() {
+    galleryItems = Array.from(document.querySelectorAll('.guide-img')).map(card => {
+      const img = card.querySelector('img');
+      const caption = card.querySelector('.guide-img-caption');
+      return {
+        src: img ? img.src : '',
+        alt: img ? img.alt : '',
+        caption: caption ? caption.innerHTML : ''
+      };
+    });
+  }
+
+  function openLightbox(index) {
+    if (galleryItems.length === 0) return;
+    currentIndex = index;
+    renderLightbox();
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox(event) {
+    if (event) event.stopPropagation();
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function closeLightboxOnBackdrop(event) {
+    if (event.target === lightbox) {
+      closeLightbox();
+    }
+  }
+
+  function renderLightbox() {
+    const item = galleryItems[currentIndex];
+    lightboxImg.src = item.src;
+    lightboxImg.alt = item.alt;
+    lightboxCaption.innerHTML = item.caption;
+    lightboxCounter.textContent = (currentIndex + 1) + ' / ' + galleryItems.length;
+  }
+
+  function nextLightbox(event) {
+    if (event) event.stopPropagation();
+    currentIndex = (currentIndex + 1) % galleryItems.length;
+    renderLightbox();
+  }
+
+  function prevLightbox(event) {
+    if (event) event.stopPropagation();
+    currentIndex = (currentIndex - 1 + galleryItems.length) % galleryItems.length;
+    renderLightbox();
+  }
+
+  document.querySelectorAll('.guide-img').forEach((card, index) => {
+    card.addEventListener('click', () => openLightbox(index));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('active')) return;
+    if (e.key === 'ArrowRight') nextLightbox();
+    else if (e.key === 'ArrowLeft') prevLightbox();
+    else if (e.key === 'Escape') closeLightbox();
+  });
+
+  buildGallery();
+</script>
+
+</body>
+</html>
